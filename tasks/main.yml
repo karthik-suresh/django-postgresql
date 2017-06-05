@@ -1,2 +1,46 @@
 ---
 # tasks file for django-postgres
+
+- name: Install pre-requisite packages.
+  apt: pkg={{item}} state=present
+  with_items:
+  - ['python-pip', 'python-dev', 'libpq-dev', 'postgresql', 'postgresql-contrib']
+
+- name: Create a database.
+  postgresql_db:
+    name: myproject
+
+- name: Create a database user with access to the database.
+  postgresql_user:
+    db: myproject
+    name: myprojectuser
+    password: password
+    priv: ALL
+
+- name: Install virtualenv.
+  pip:
+    name: virtualenv
+
+- name: Install pip-packages to vitualenv.
+  pip:
+    name: ['django', 'psycopg2']
+    virtualenv: myprojectenv
+
+- name: Start django myproject.
+  shell: ~/myprojectenv/bin/django-admin.py startproject myproject.
+
+- name: Migrate django-db settings.
+  django_manage:
+    command: migrate
+    app_path: myproject
+    virtualenv: myprojectenv
+
+- name: Create superuser for django.
+  django_manage:
+    command: "createsuperuser --noinput --username=admin --email=admin@example.com password=password"
+    app_path: myproject
+
+- name: Run the django server.
+  django_manage:
+    command: "runserver 0:8080"
+    app_path: myproject
